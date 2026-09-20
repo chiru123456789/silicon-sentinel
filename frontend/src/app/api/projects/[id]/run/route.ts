@@ -1,3 +1,4 @@
+
 import { NextResponse } from "next/server";
 import { execFile } from "child_process";
 import { promisify } from "util";
@@ -95,79 +96,65 @@ export async function POST(
     }
 
     // ------------------------------------------------------------
-    // 4. Convert Windows engine path → WSL path
+    // 4. Execute Silicon Sentinel
+    //
+    // Windows:
+    //   Uses WSL exactly as before.
+    //
+    // Linux / AWS:
+    //   Executes Python directly on the Linux host.
     // ------------------------------------------------------------
 
-    const windowsProjectRoot = path.resolve(
+    const projectRoot = path.resolve(
       process.cwd(),
       ".."
     );
 
-    const driveLetter = windowsProjectRoot
-      .substring(0, 1)
-      .toLowerCase();
-
-    const remainingPath = windowsProjectRoot
-      .substring(2)
-      .replace(/\\/g, "/");
-
-    const wslProjectRoot =
-      "/mnt/" +
-      driveLetter +
-      remainingPath;
-
-    // ------------------------------------------------------------
-    // 5. Execute Silicon Sentinel
-    // ------------------------------------------------------------
-
-    const pythonScript = "engine/sentinel.py";
-
-    const shellCommand =
-      "cd " +
-      JSON.stringify(wslProjectRoot) +
-      " && python3 " +
-      pythonScript +
-      " " +
-      JSON.stringify(projectId);
-
-    console.log(
-      "======================================"
-    );
-
-    console.log(
-      "SILICON SENTINEL API RUN"
-    );
-
-    console.log(
-      "======================================"
-    );
-
-    console.log(
-      "Project ID:",
-      projectId
-    );
-
-    console.log(
-      "Project directory:",
-      projectDirectory
-    );
-
-    console.log(
-      "WSL root:",
-      wslProjectRoot
-    );
-
-    console.log(
-      "Command:",
-      shellCommand
-    );
+    const pythonScript = 
+      "engine/sentinel.py";
 
     let output = "";
     let errorOutput = "";
 
+    console.log("======================================");
+    console.log("SILICON SENTINEL API RUN");
+    console.log("======================================");
+    console.log("Project ID:", projectId);
+    console.log("Project directory:", projectDirectory);
+    console.log("Project root:", projectRoot);
+    console.log("Platform:", process.platform);
+
     try {
-      const execution =
-        await execFileAsync(
+      if (process.platform === "win32") {
+        // --------------------------------------------------------
+        // Windows → WSL
+        // --------------------------------------------------------
+
+        const driveLetter = projectRoot
+          .substring(0, 1)
+          .toLowerCase();
+
+        const remainingPath = projectRoot
+          .substring(2)
+          .replace(/\\/g, "/");
+
+        const wslProjectRoot =
+          "/mnt/" +
+          driveLetter +
+          remainingPath;
+
+        const shellCommand =
+          "cd " +
+          JSON.stringify(wslProjectRoot) +
+          " && python3 " +
+          pythonScript +
+          " " +
+          JSON.stringify(projectId);
+
+        console.log("WSL root:", wslProjectRoot);
+        console.log("Command:", shellCommand);
+
+        const execution = await execFileAsync(
           "wsl",
           [
             "bash",
@@ -180,11 +167,32 @@ export async function POST(
           }
         );
 
-      output =
-        execution.stdout || "";
+        output = execution.stdout || "";
+        errorOutput = execution.stderr || "";
+      } else {
+        // --------------------------------------------------------
+        // Linux / AWS EC2
+        // --------------------------------------------------------
 
-      errorOutput =
-        execution.stderr || "";
+        console.log(
+          "Running Sentinel directly on Linux."
+        );
+
+        const execution = await execFileAsync(
+          "python3",
+          [
+            pythonScript,
+            projectId,
+          ],
+          {
+            cwd: projectRoot,
+            maxBuffer: 10 * 1024 * 1024,
+          }
+        );
+
+        output = execution.stdout || "";
+        errorOutput = execution.stderr || "";
+      }
     } catch (error: unknown) {
       const executionError =
         error as ExecError;
@@ -223,7 +231,7 @@ export async function POST(
     }
 
     // ------------------------------------------------------------
-    // 6. Read THIS PROJECT'S verification report
+    // 5. Read THIS PROJECT'S verification report
     // ------------------------------------------------------------
 
     const reportPath = path.join(
@@ -256,27 +264,21 @@ export async function POST(
       );
 
       // ----------------------------------------------------------
-      // 7. Return execution + artifact metadata
+      // 6. Return execution + artifact metadata
       // ----------------------------------------------------------
 
       return NextResponse.json({
         success: true,
-
         projectId,
-
         result,
-
         output,
-
         details: errorOutput,
-
         artifacts: {
           report: `projects/${projectId}/reports/failure.json`,
           simulationLog: `projects/${projectId}/reports/simulation.log`,
           reportMarkdown: `projects/${projectId}/reports/report.md`,
           waveform: `projects/${projectId}/waveforms/alu.vcd`,
         },
-
         paths: {
           project: projectDirectory,
           reports: reportsDirectory,
@@ -293,15 +295,10 @@ export async function POST(
         {
           success: false,
           projectId,
-
           error:
             "Sentinel completed, but the project failure.json could not be read.",
-
           output,
-
-          details:
-            errorOutput,
-
+          details: errorOutput,
           reportPath,
         },
         { status: 500 }
