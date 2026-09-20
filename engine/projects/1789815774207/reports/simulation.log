@@ -1,0 +1,45 @@
+
+======================================
+       SILICON SENTINEL ALU TEST
+======================================
+
+ADD : 10 + 20 = 30 | carry=0
+SUB : 30 - 10 = 20 | carry=0
+AND : ff & 0f = 0f
+OR  : ff | 0f = ff
+XOR : ff ^ 0f = f0
+NOT : ~aa = 55
+SHL : 00000001 -> 00000010
+SHR : 10000000 -> 01000000
+ZERO: 10 - 10 = 0 | zero=1
+
+--------------------------------------
+       FAILURE CAMPAIGN TEST
+--------------------------------------
+OVERFLOW: 255 + 1 = 0 | carry=0
+
+!!! SILICON SENTINEL FAILURE DETECTED !!!
+
+Module      : alu
+Operation   : ADD
+Input A     : 0xff
+Input B     : 0x01
+
+EXPECTED
+Result      : 0x00
+Carry       : 1
+
+ACTUAL
+Result      : 0x00
+Carry       : 0
+
+Risk        : HIGH
+Status      : FAILURE
+
+======================================
+          TEST COMPLETE
+======================================
+- /mnt/c/Users/Chandrashekar GB/Desktop/silicon-sentinel/engine/projects/1789815774207/testbench/alu_tb.sv:207: Verilog $finish
+- S i m u l a t i o n   R e p o r t: Verilator 5.032 2025-01-01
+- Verilator: $finish at 10ps; walltime 0.009 s; speed 5.053 ns/s
+- Verilator: cpu 0.002 s on 1 threads; alloced 25 MB

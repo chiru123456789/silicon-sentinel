@@ -1,0 +1,123 @@
+{
+  "id": "SS-1789815774207",
+  "project_id": "1789815774207",
+  "status": "FAILURE",
+  "risk": "HIGH",
+  "module": "alu",
+  "operation": "ADD",
+  "inputs": {
+    "a": "0xff",
+    "b": "0x01"
+  },
+  "expected": {
+    "result": "0x00",
+    "carry": "1"
+  },
+  "actual": {
+    "result": "0x00",
+    "carry": "0"
+  },
+  "line": 26,
+  "sourceFile": "engine/projects/1789815774207/rtl/alu.sv",
+  "sourceMapping": {
+    "confidence": "HIGH",
+    "reason": "Matched the failing operation branch and carry assignment."
+  },
+  "architecture": {
+    "modules": [
+      {
+        "name": "alu",
+        "file": "engine/projects/1789815774207/rtl/alu.sv",
+        "lineStart": 1,
+        "lineEnd": 77,
+        "ports": [
+          {
+            "name": "a",
+            "direction": "input"
+          },
+          {
+            "name": "b",
+            "direction": "input"
+          },
+          {
+            "name": "op",
+            "direction": "input"
+          },
+          {
+            "name": "result",
+            "direction": "output"
+          },
+          {
+            "name": "zero",
+            "direction": "output"
+          },
+          {
+            "name": "carry",
+            "direction": "output"
+          }
+        ],
+        "portCount": 6,
+        "inputs": 3,
+        "outputs": 3,
+        "inouts": 0,
+        "role": "FAILING_MODULE",
+        "failure": true
+      }
+    ],
+    "moduleCount": 1,
+    "failingModule": {
+      "name": "alu",
+      "file": "engine/projects/1789815774207/rtl/alu.sv",
+      "lineStart": 1,
+      "lineEnd": 77,
+      "ports": [
+        {
+          "name": "a",
+          "direction": "input"
+        },
+        {
+          "name": "b",
+          "direction": "input"
+        },
+        {
+          "name": "op",
+          "direction": "input"
+        },
+        {
+          "name": "result",
+          "direction": "output"
+        },
+        {
+          "name": "zero",
+          "direction": "output"
+        },
+        {
+          "name": "carry",
+          "direction": "output"
+        }
+      ],
+      "portCount": 6,
+      "inputs": 3,
+      "outputs": 3,
+      "inouts": 0,
+      "role": "FAILING_MODULE",
+      "failure": true
+    },
+    "failureLocation": {
+      "file": "engine/projects/1789815774207/rtl/alu.sv",
+      "line": 26,
+      "confidence": "HIGH",
+      "reason": "Matched the failing operation branch and carry assignment."
+    }
+  },
+  "source": {
+    "project": "1789815774207",
+    "rtl": [
+      "engine/projects/1789815774207/rtl/alu.sv"
+    ],
+    "testbench": [
+      "engine/projects/1789815774207/testbench/alu_tb.sv"
+    ],
+    "engine": "Verilator"
+  }
+}
