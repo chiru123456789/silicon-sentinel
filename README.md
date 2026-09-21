@@ -178,7 +178,7 @@ Silicon Sentinel focuses on the pre-silicon stage, where verification evidence c
 The deployed competition demo will be linked here.
 
 ```text
-LIVE DEMO: [AWS URL]
+LIVE DEMO: [https://silicon-sentinel-tan.vercel.app/]
 ```
 
 ## Project Status
