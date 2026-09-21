@@ -169,39 +169,88 @@ export async function GET(
      *
      * /api/projects/1789815774207/files?file=waveforms/alu.vcd
      *
-     * This must return the actual VCD text, NOT the normal
-     * project-source JSON response.
+     * The route checks both:
+     *
+     * 1. The local engine project directory.
+     * 2. The public artifacts directory used by Vercel.
+     *
+     * This allows waveform files to work in production even
+     * when the engine directory is not deployed.
      */
+
     const url = new URL(request.url);
+
     const requestedFile =
       url.searchParams.get("file");
 
     if (requestedFile) {
-      try {
-        await access(projectDirectory);
-      } catch {
-        return NextResponse.json(
-          {
-            error:
-              "Project was not found.",
-          },
-          { status: 404 }
+      const publicArtifactsDirectory =
+        path.join(
+          process.cwd(),
+          "public",
+          "artifacts",
+          projectId
         );
-      }
 
-      const artifactPath =
+      const engineArtifactPath =
         resolveArtifactPath(
           projectDirectory,
           requestedFile
         );
 
-      if (!artifactPath) {
+      const publicArtifactPath =
+        resolveArtifactPath(
+          publicArtifactsDirectory,
+          requestedFile
+        );
+
+      if (
+        !engineArtifactPath ||
+        !publicArtifactPath
+      ) {
         return NextResponse.json(
           {
             error:
               "Invalid artifact path.",
           },
           { status: 400 }
+        );
+      }
+
+      let artifactPath: string | null = null;
+
+      /*
+       * First try the engine artifact.
+       *
+       * If it is unavailable, try the static artifact
+       * copied into frontend/public/artifacts.
+       */
+
+      for (const candidate of [
+        engineArtifactPath,
+        publicArtifactPath,
+      ]) {
+        try {
+          const candidateStats =
+            await stat(candidate);
+
+          if (candidateStats.isFile()) {
+            artifactPath = candidate;
+            break;
+          }
+        } catch {
+          // Try the next artifact location.
+        }
+      }
+
+      if (!artifactPath) {
+        return NextResponse.json(
+          {
+            error:
+              "Requested artifact was not found.",
+            file: requestedFile,
+          },
+          { status: 404 }
         );
       }
 
@@ -260,6 +309,7 @@ export async function GET(
        * In particular, alu.vcd is returned as raw VCD text.
        * This is what the waveform parser in page.tsx expects.
        */
+
       return new NextResponse(
         artifactContent,
         {
@@ -291,7 +341,7 @@ export async function GET(
      *
      * /api/projects/:id/files
      *
-     * returns RTL + testbench information.
+     * Returns RTL + testbench information.
      */
 
     const projectMetadataPath =
@@ -355,6 +405,7 @@ export async function GET(
      * artifacts such as .vcd are never mistaken for
      * source or testbench files.
      */
+
     if (!rtlFilename) {
       const rtlFiles =
         await readdir(rtlDirectory);
@@ -408,6 +459,7 @@ export async function GET(
      * Use basename so metadata can never escape
      * the project's source directory.
      */
+
     rtlFilename =
       path.basename(rtlFilename);
 
